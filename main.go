@@ -58,7 +58,7 @@ type TypeDef struct {
 
 type Collection struct {
 	name string
-	contained_type TypeDef
+	contained_type *Collection
 	from_file string
 }
 
@@ -136,22 +136,92 @@ func init_NavigationProperty() {
 	//TODO
 }
 
-func find_element_in_scope(element_name string, references []string, this_file string) {
-	//TODO
+func find_element_in_scope(element_name string, references []string, this_file string) Collection {
+
+	var contained_element Collection = Collection{}
+
+	if strings.HasPrefix(element_name, "Collection(") && strings.HasSuffix(element_name, ")") {
+
+		contained_element = find_element_in_scope(element_name[11:], references, this_file)
+		return Collection{name: element_name, contained_type: &contained_element, from_file: this_file}
+	}
+
+	//var edmtype = basetype_from_edm(element_name) //TODO
+
+	//if edmtype != nil { return edmtype }
+
+	var elements Collection = Collection{}
+
+	var namespaces = []string{} //TODO
+	//for _,(reference_uri, namespaces) := references { //TODO
+	for i,_ := range references {
+
+		fmt.Printf("%d", i); //DUMMY
+		var reference_uri = "" //TODO
+
+		//var uri = urlparse(reference_uri) //TODO: urlparse function
+		var uri = struct {path string ""}{}
+
+		var path = "cdsl" + "/" + filepath.Base(uri.path)
+
+		_,err :=  os.Stat(path)
+		if err != nil {
+
+			fmt.Printf("File doesn't exist, downloading from %s\n", reference_uri)
+			//TODO: find some requests library
+			//var r = requests.get(reference_uri)
+			//r.raise_for_status()
+
+			//_ = os.WriteFile(path, []byte(r.content))
+		}
+
+		elements = parse_file(path, namespaces, element_name)
+
+		//var l = len(elements) //TODO
+		var l = 0
+
+		if l == 0 { continue }
+		if l  >  1 {
+
+			fmt.Printf("Found %d %s elemens with referencelist %s\n", l, element_name, "TODO") //TODO
+			continue
+		}
+
+		//return elements[0]//TODO
+		return elements
+	}
+
+	//finish by searching the file we're in now
+	elements = parse_file(this_file, namespaces, element_name)
+
+	//var l1 = len(elements)//
+	var l1 = 1;
+
+	if l1 != 1 { return Collection{} }
+
+	//return elements[0] //TODO
+	return elements
+
+	fmt.Printf("Unable to find %s\n", element_name)
+
+	return Collection{}
 }
 
-func parse_file(filename string, namespaces_to_check []string, element_name_filter string) string {
+func parse_file(filename string, namespaces_to_check []string, element_name_filter string) Collection {
 	//TODO
-	return ""
+	return Collection{}
 }
 
-func parse_toplevel(filepath string) string {
+func parse_toplevel(filepath string) Collection {
 	fmt.Printf("Parsing %s\n", filepath);
 	return parse_file(filepath, []string{}, "");
 }
 
-func get_grpc_filename_from_entity(entity string) {
-	//TODO
+func get_grpc_filename_from_entity(entity EntityType) string{
+
+	var new_filename = filepath.Base(entity.from_file)
+	var filepath = new_filename + "/" + entity.name + ".proto"
+	return filepath
 }
 
 func get_grpc_property_type_string(object_type string, this_package string) {
@@ -291,13 +361,21 @@ func write_meson_file_for_proto(inputpath string) {
 	}
 }
 
-func get_lowest_type(this_class string, depth int) {
+func get_lowest_type(this_class EntityType, depth int) EntityType {
 	//TODO
+	//return EntityType{}
+	return this_class
 }
 
-func find_type_for_abstract(class_list []string, abs int) {
+func find_type_for_abstract(class_list []EntityType, abs EntityType) EntityType {
 
-	//TODO
+	for _,element := range class_list {
+
+		var lt EntityType = get_lowest_type(element, 0)
+		if lt.name == abs.name && lt.from_file == abs.from_file { return element }
+	}
+
+	return abs
 }
 
 func instantiate_abstract_classes(class_list []string, this_class string) {
@@ -344,7 +422,9 @@ func main() {
 		});
 
 		for _,filepath := range filepaths {
-			flat_list = append(flat_list, parse_toplevel(filepath))
+
+			//flat_list = append(flat_list, parse_toplevel(filepath)) //TODO
+			flat_list = append(flat_list, filepath)
 		}
 
 		flat_list = remove_old_schemas(flat_list)
