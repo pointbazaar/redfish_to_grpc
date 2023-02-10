@@ -24,7 +24,66 @@ const (
 	GUID		= 9
 )
 
-// other definitions
+// struct definitions
+
+type EntityType struct {
+	name string
+	properties []string
+	basetype string
+	basetype_flat string
+	namespace string
+	abstract string
+	from_file string
+}
+
+type Enum struct {
+	name string
+	values []string
+	namespace string
+	from_file string
+}
+
+type Complex struct {
+	name string
+	namespace string
+	from_file string
+}
+
+type TypeDef struct {
+	name string
+	basetype string
+	namespace string
+	from_file string
+}
+
+type Collection struct {
+	name string
+	contained_type TypeDef
+	from_file string
+}
+
+type Property struct {
+	name string
+	_type TypeDef
+	permissions string
+	description string
+	long_description string
+	from_file string
+}
+
+type NavigationProperty struct {
+	name string
+	_type TypeDef
+	permissions string
+	auto_expand bool
+	expand_references bool
+	description string
+	long_description string
+	from_file string
+	contains_target bool
+}
+
+// other
 
 var circular_imports = []string{
 	"SubProcessors",
