@@ -85,6 +85,8 @@ type NavigationProperty struct {
 
 // other
 
+var folders_added_to_grpc = []string{}
+
 var circular_imports = []string{
 	"SubProcessors",
 	"AllocatedPools",
@@ -261,11 +263,32 @@ func write_cpp_code(flat_list []string) {
 }
 
 func write_meson_root_config() {
-	//TODO
+
+	var filepath = "grpc/meson.build"
+	var f,_ = os.Create(filepath)
+	defer f.Close()
+
+	f.WriteString("protobuf_generated = []\n")
+
+	//for filename in sorted(folders_added_to_grpc) //TODO
+		//TODO
+
+	f.WriteString("protobuf_generated += grpc_gen.process(\n")
+	f.WriteString("'entry.proto',\n")
+	f.WriteString("preserve_path_from : meson.current_source_dir()")
+	f.WriteString(")\n")
 }
 
 func write_meson_file_for_proto(inputpath string) {
-	//TODO
+
+	//var dirname = filepath.Dir(inputpath)
+	//var basename = filepath.Base(inputpath)
+	//var meson_filename = dirname + "meson.build"
+	var dirpath,_ = filepath.Rel(inputpath, "grpc")
+
+	if dirpath != "." {
+		folders_added_to_grpc = append(folders_added_to_grpc, dirpath)
+	}
 }
 
 func get_lowest_type(this_class string, depth int) {
