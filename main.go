@@ -5,6 +5,7 @@ import ("fmt"
 	"io/fs"
 	"strings"
 	"os/exec"
+	"os"
 )
 
 // enum definitions
@@ -22,6 +23,21 @@ const (
 	DECIMAL		= 8
 	GUID		= 9
 )
+
+// other definitions
+
+var circular_imports = []string{
+	"SubProcessors",
+	"AllocatedPools",
+	"CapacitySources",
+	"StorageGroups",
+	"Steps",
+	"MetricReportDefinition",
+	"SubTasks",
+	"DataProtectionLinesOfService",
+}
+
+// function definitions
 
 func basetype_from_edm(edm_type string) BaseType {
 	var e = edm_type
@@ -63,13 +79,14 @@ func find_element_in_scope(element_name string, references []string, this_file s
 	//TODO
 }
 
-func parse_file(filename string, namespaces_to_check []string, element_name_filter string) {
+func parse_file(filename string, namespaces_to_check []string, element_name_filter string) string {
 	//TODO
+	return ""
 }
 
 func parse_toplevel(filepath string) string {
-	return filepath
-	//TODO
+	fmt.Printf("Parsing %s\n", filepath);
+	return parse_file(filepath, []string{}, "");
 }
 
 func get_grpc_filename_from_entity(entity string) {
@@ -89,7 +106,13 @@ func generate_grpc_for_type(typedef string) {
 }
 
 func write_fixed_messages() {
-	//TODO
+	var nav_out = "syntax = \"proto3\";\n\n"
+	nav_out += "message NavigationReference {\n"
+	nav_out += "    string id = 1;\n }"
+
+	var filepath = "grpc/NavigationReference.proto"
+	os.WriteFile(filepath, []byte(nav_out), 0644)
+	write_meson_file_for_proto(filepath)
 }
 
 func clear_and_make_output_dirs() {
@@ -120,6 +143,10 @@ func write_meson_root_config() {
 	//TODO
 }
 
+func write_meson_file_for_proto(inputpath string) {
+	//TODO
+}
+
 func get_lowest_type(this_class string, depth int) {
 	//TODO
 }
@@ -135,8 +162,17 @@ func instantiate_abstract_classes(class_list []string, this_class string) {
 }
 
 func remove_old_schemas(flat_list []string) []string {
-	//TODO
-	return flat_list
+	//remove all but the last schema version for a type by
+	//loading them into a map with Namespace+name
+	var elements = make(map[string]string)
+	//for _,item := range flat_list {
+		//elements[item.namespace.split(".")[0] + item.name] = item
+	//}
+	var flat_list_new = []string{}
+	for _,v := range elements {
+		flat_list_new = append(flat_list_new, v)
+	}
+	return flat_list_new
 }
 
 func main() {
