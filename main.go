@@ -28,8 +28,8 @@ const (
 
 type EntityType struct {
 	name string
-	properties []string
-	basetype string
+	properties []Property
+	basetype *EntityType
 	basetype_flat string
 	namespace string
 	abstract string
@@ -64,7 +64,7 @@ type Collection struct {
 
 type Property struct {
 	name string
-	_type TypeDef
+	_type EntityType
 	permissions string
 	description string
 	long_description string
@@ -224,12 +224,64 @@ func get_grpc_filename_from_entity(entity EntityType) string{
 	return filepath
 }
 
-func get_grpc_property_type_string(object_type string, this_package string) {
+func get_grpc_property_type_string(object_type EntityType, this_package string) (string, []string) {
+
+	var required_imports = []string{}
+
 	//TODO
+	var filename = get_grpc_filename_from_entity(object_type)
+
+	required_imports = append(required_imports, filename)
+
+	if this_package == strings.Split(object_type.namespace, ".")[0] {
+		return object_type.name, required_imports
+	}
+
+	return "." + strings.Split(object_type.namespace, ".")[0] + "." + object_type.name, required_imports
 }
 
-func generate_properties_for_entity(typedef string, index_start int, message_name string, package_name string) {
-	//TODO
+func generate_properties_for_entity(typedef EntityType, index_start int, message_name string, package_name string) (string, []string, int) {
+
+	var grpc_out = ""
+	var required_imports = []string{}
+	var property_index = index_start
+
+	if true { //TODO
+
+		if typedef.basetype != nil {
+			var text,includes,p1 = generate_properties_for_entity(
+				*typedef.basetype, index_start, message_name, package_name)
+			property_index = p1
+			grpc_out += text
+			required_imports = append(required_imports, includes...)
+		}
+
+		if len(typedef.properties) != 0 {
+			if property_index != 1 {
+				grpc_out += "\n"
+			}
+			grpc_out += fmt.Sprintf("   // from %s.%s\n", typedef.namespace, typedef.name)
+		}
+
+		for _,property_obj := range typedef.properties {
+
+			//if isinstance ... //TODO
+			if true {
+				var grpc_type = "NavigationReference"
+				//if isinstance ... //TODO
+				grpc_out += fmt.Sprintf("    %s %s = %s;\n", grpc_type, property_obj.name, property_index)
+				required_imports = append(required_imports, "NavigationReference.proto")
+			} else {
+				var text, imports = get_grpc_property_type_string(property_obj._type, package_name)
+
+				grpc_out += fmt.Sprintf("    %s %s = %s;\n", text, property_obj.name, property_index)
+
+				required_imports = append(required_imports, imports...)
+			}
+			property_index += 1
+		}
+	}
+	return grpc_out, required_imports, property_index
 }
 
 func generate_grpc_for_type(typedef string) {
