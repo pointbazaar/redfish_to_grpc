@@ -206,12 +206,46 @@ func clear_and_make_output_dirs() {
 	} else { os.Mkdir("grpc/proto_out", os.ModePerm) }
 }
 
-func get_properties_for_service_root(entity string, path string, depth int, collectionlist []string) {
+func get_properties_for_service_root(entity string, path string, depth int, collectionlist []string) (string, []string, []string) {
 	//TODO
+	return "",[]string{},[]string{}
 }
 
 func write_service_root(flat_list []string) {
-	//TODO
+
+	//service_root = [x for x in flat_list if x.name == "ServiceRoot"] //TODO
+	var service_root = []string{}
+
+	if len(service_root) != 1 {
+		fmt.Printf("Unable to find unique service root\n")
+		//TODO: raise exception
+	}
+
+	var proto_filename = "grpc/entry.proto"
+
+	var f,_ = os.Create(proto_filename)
+	defer f.Close()
+
+	f.WriteString("syntax = \"proto3\";\n\n");
+	f.WriteString("package redfish_v1;\n\n")
+
+	var body, header, messages = get_properties_for_service_root(service_root[0], "", 0, []string{})
+
+	header = append(header, "import \"NavigationReference.proto\";\n")
+	//deduplicate headers
+	//header = sorted(set(header), key=str.casefold) //TODO
+
+	for _,header_element := range header {
+		f.WriteString(header_element)
+	}
+
+	for _,m := range messages { f.WriteString(m) }
+
+	f.WriteString("service Redfish_v1{\n")
+	f.WriteString(body)
+	f.WriteString("}")
+
+	write_meson_file_for_proto(proto_filename)
 }
 
 func get_cpp_for_type(name string, property_obj string, indent_level int, val_level int, main_object_available bool) {
