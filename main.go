@@ -7,12 +7,48 @@ import ("fmt"
 	"os/exec"
 )
 
-func basetype_from_edm(edm_type string) {
-	//TODO
+// enum definitions
+
+type BaseType int16
+
+const (
+	STRING BaseType = 1
+	BOOLEAN		= 2
+	DURATION	= 3
+	TIME		= 4
+	FLOAT		= 5
+	INT64		= 6
+	INT32		= 7
+	DECIMAL		= 8
+	GUID		= 9
+)
+
+func basetype_from_edm(edm_type string) BaseType {
+	var e = edm_type
+	if e == "Edm.String" { return STRING }
+	if e == "Edm.Boolean" { return BOOLEAN }
+	if e == "Edm.Decimal" { return DECIMAL }
+	if e == "Edm.Int64" { return INT64 }
+	if e == "Edm.Int32" { return INT32 }
+	if e == "Edm.DateTimeOffset" { return TIME }
+	if e == "Edm.Duration" { return DURATION }
+	if e == "Edm.GUID" { return GUID }
+	return STRING
 }
 
-func basetype_to_grpc(basetype string) {
-	//TODO
+func basetype_to_grpc(b BaseType) (string, []string) {
+	var e = []string{}
+	switch b {
+	case STRING: return "string", e
+	case BOOLEAN: return "bool", e
+	case DECIMAL: return "double", e
+	case INT64: return "int64", e
+	case INT32: return "int32", e
+	case TIME: return "google.protobuf.Timestamp", []string{"google/protobuf/timestamp.proto"}
+	case DURATION: return "google.protobuf.Duration", []string{"google/protobuf/duration.proto"}
+	case GUID: return "string", e
+	default: return "Can't find type for TODO", e
+	}
 }
 
 func init_Property() {
