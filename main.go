@@ -116,7 +116,35 @@ func write_fixed_messages() {
 }
 
 func clear_and_make_output_dirs() {
-	//TODO
+
+	var info, _ = os.Stat("grpc")
+
+	if info.IsDir() {
+
+		filepath.WalkDir("grpc", func(path string, d fs.DirEntry, err error) error {
+
+			if !d.Type().IsDir() {
+				os.Remove(path)
+			} else {
+				os.RemoveAll(path)
+			}
+
+			return nil
+		})
+	} else { os.Mkdir("grpc", os.ModePerm) }
+
+	var info2, _ = os.Stat("grpc/proto_out")
+
+	if info2.IsDir() {
+
+		filepath.WalkDir("grpc/proto_out", func(path string, d fs.DirEntry, err error) error {
+
+			var info3,_ = os.Stat(path)
+			if info3.IsDir() { os.Remove(path) } else { os.RemoveAll(path) }
+
+			return nil
+		})
+	} else { os.Mkdir("grpc/proto_out", os.ModePerm) }
 }
 
 func get_properties_for_service_root(entity string, path string, depth int, collectionlist []string) {
