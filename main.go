@@ -34,6 +34,7 @@ type EntityType struct {
 	namespace string
 	abstract string
 	from_file string
+	contained_type *EntityType
 }
 
 type Enum struct {
@@ -345,15 +346,84 @@ func clear_and_make_output_dirs() {
 	} else { os.Mkdir("grpc/proto_out", os.ModePerm) }
 }
 
-func get_properties_for_service_root(entity string, path string, depth int, collectionlist []string) (string, []string, []string) {
-	//TODO
-	return "",[]string{},[]string{}
+func get_properties_for_service_root(entity *EntityType, path string, depth int, collectionlist []string) (string, []string, []string) {
+
+	var body = "";
+	var header = []string{};
+	var messages = []string{};
+
+	//TODO(ed) What do collections look like?
+
+	//if isinstance(entity, Collection)
+		collectionlist = []string{};
+		collectionlist = append(collectionlist, path);
+		return get_properties_for_service_root(entity.contained_type, path, 0, collectionlist);
+
+	//if isinstance(entity, TypeDef)
+		//Note, because typedefs aren't a real property, they don't increase depth
+		return get_properties_for_service_root(entity.basetype, path, 0, collectionlist);
+
+	//if isinstance(entity, EntityType)
+		if path == "" { path = "ServiceRoot";  }
+
+		// only generate service definition for root level objects
+		if depth == 0 {
+
+			var s = fmt.Sprintf("\nmessage Get_%s_FilterSpec{{\n   string expand = 1;\n    repeated string filter = 2;\n", path);
+			messages = append(messages, s);
+
+			for element_index, _ := range collectionlist {
+
+				var arr = strings.Split(path, "_");
+				var s = fmt.Sprintf("    NavigationReference %sId = %s;\n", arr[len(arr)-1], element_index+3);
+				messages = append(messages, s);
+
+				//TODO(ed) Figure out how to rename routes with multiple ids
+				break;
+			}
+
+			messages = append(messages, "}\n");
+
+			var ns1 = strings.Split(entity.namespace, ".")[0];
+			body += (fmt.Sprintf("    rpc Get_%s(Get_%s_FilterSpec) returns (%s.%s) {{}};\n", path, path, ns1, entity.name));
+
+			var filename = get_grpc_filename_from_entity(*entity);
+
+			header = append(header, fmt.Sprintf("import \"%s\";\n", filename));
+		}
+
+		if entity.basetype != nil {
+
+			var this_body, this_header, this_messages = get_properties_for_service_root(entity.basetype, path, depth+1, collectionlist);
+			body += this_body;
+			header = append(header, this_header...);
+
+			messages = append(messages, strings.Join(this_messages, ""));
+		}
+
+		for _,property_obj := range entity.properties {
+
+			//if !isinstance(property_obj, NavigationProperty {continue;}
+			var new_path = path + "_" + property_obj.name;
+
+			if strings.HasPrefix(new_path, "_") { new_path = new_path[1:]; }
+
+			body += fmt.Sprintf("\n    //from %s\n", entity.namespace + "." + entity.name);
+
+			var this_body, this_header, this_messages = get_properties_for_service_root(&property_obj._type, new_path, 0, collectionlist);
+
+			body += this_body;
+			header = append(header, this_header...);
+			messages = append(messages, strings.Join(this_messages, ""));
+		}
+
+	return body, header, messages;
 }
 
 func write_service_root(flat_list []string) {
 
 	//service_root = [x for x in flat_list if x.name == "ServiceRoot"] //TODO
-	var service_root = []string{}
+	var service_root = []*EntityType{}
 
 	if len(service_root) != 1 {
 		fmt.Printf("Unable to find unique service root\n")
