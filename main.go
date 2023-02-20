@@ -128,12 +128,27 @@ func basetype_to_grpc(b BaseType) (string, []string) {
 	}
 }
 
-func init_Property() {
-	//TODO
+func init_Property(p Property, name string, thistype EntityType, permissions string, description string, long_description string, from_file string) {
+
+	p.name = name;
+	p._type = thistype;
+	p.permissions = permissions;
+	p.description = description;
+	p.long_description = long_description;
+	p.from_file = from_file;
 }
 
-func init_NavigationProperty() {
-	//TODO
+func init_NavigationProperty(p NavigationProperty, name string, thistype TypeDef, permissions string, auto_expand bool, expand_references bool, description string, long_description string, from_file string, contains_target bool) {
+
+	p.name = name;
+	p._type = thistype;
+	p.permissions = permissions;
+	p.description = description;
+	p.long_description = long_description;
+	p.from_file = from_file;
+	p.auto_expand = auto_expand;
+	p.expand_references = expand_references;
+	p.contains_target = contains_target;
 }
 
 func find_element_in_scope(element_name string, references []string, this_file string) Collection {
